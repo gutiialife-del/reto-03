@@ -11,7 +11,7 @@ import { verificarModulo } from "./scripts/modulo"
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url))
 setRaiz(ROOT)
-process.env.FECHA_REFERENCIA ??= "2026-09-03"
+process.env.FECHA_REFERENCIA ||= "2026-09-03"
 const tools = new Map(registrarHerramientas(APP.herramientas).map((t) => [t.nombre, t.tool]))
 
 type Data = Record<string, unknown>

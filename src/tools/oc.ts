@@ -72,6 +72,9 @@ export const validar = defineTool({
       await writeJson(path.join(rutas(ctx.directory).out(args.caso), "validacion.json"), { caso: args.caso, ts: ahora(), ...visible })
       return ok({
         ...visible,
+        ...(validacion.apta && validacion.confirmaciones.length
+          ? { pendiente_confirmacion: { accion: `crear la OC de ${args.caso} aceptando ${validacion.confirmaciones.map((c) => c.codigo).join(", ")}`, detalle: validacion.confirmaciones.map((c) => `${c.codigo}: ${c.detalle}`).join(" | ") } }
+          : {}),
         resumen: `${validacion.apta ? "apta" : "NO apta"} · bloqueos: ${validacion.bloqueos.map((b) => b.codigo).join(", ") || "ninguno"} · confirmaciones: ${validacion.confirmaciones.map((c) => c.codigo).join(", ") || "ninguna"}${validacion.retroactiva ? " · RETROACTIVA" : ""}`,
       })
     })
