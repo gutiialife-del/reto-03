@@ -1,0 +1,16 @@
+{
+  "_descripcion": "Parámetros de control que leen las herramientas. Cambiar una regla aquí no exige tocar el servidor ni el código.",
+  "sociedad": "1000",
+  "organizacion_compras": "1000",
+  "monedas": ["COP", "USD"],
+  "tolerancia_cotizacion_pct": 0.02,
+  "tolerancia_valor_total": 1,
+  "max_descripcion": 40,
+  "numero_oc_inicial": 4500000001,
+  "palabra_aprobacion": "aprobado",
+  "unidades": {
+    "H": ["hora", "horas"],
+    "MES": ["mensual", "mensualidad", "por mes"]
+  },
+  "unidad_por_defecto": "UN"
+}
