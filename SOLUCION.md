@@ -50,10 +50,15 @@ En este reto la acción con confirmación es `oc_crear`: si `oc_validar` devolvi
 
 ## 4. Elección del modelo
 
-- **Proveedor por defecto:** Anthropic, modelo `claude-sonnet-5-5` (configurable con `LLM_MODEL`). Motivos: buen seguimiento de instrucciones largas en español, uso de herramientas en paralelo (varias llamadas en una misma respuesta) y respuestas estructuradas. Para bajar costo se puede usar un modelo más pequeño de la misma familia cambiando solo `LLM_MODEL`; el diseño lo tolera porque los valores y las reglas los calculan las herramientas, no el modelo.
-- **Alternativa sin tocar el ciclo:** `LLM_PROVIDER=openai` usa cualquier API compatible con OpenAI Chat Completions (OpenAI u otros proveedores vía `LLM_BASE_URL`).
-- **Costo estimado por caso.** El contexto fijo (system prompt + esquemas de herramientas) mide aproximadamente 2 700 tokens (calculado sobre los caracteres del prompt y los esquemas; la cifra exacta depende del tokenizador). Un caso («procesa la solicitud X») usa 5–6 llamadas a herramientas en 4–7 vueltas; el payload completo viaja dos veces (lo devuelve `oc_construir_payload` y el modelo lo reenvía a `oc_crear`). Como cada vuelta reenvía el historial, el orden de magnitud es de **unas decenas de miles de tokens de entrada y 2–4 mil de salida por caso**. Costo ≈ `tokens_entrada × precio_entrada + tokens_salida × precio_salida`, con el precio por millón de tokens vigente en la página de precios del proveedor. Estas cifras son una estimación previa, no una medición: el footer del chat muestra los tokens reales de la sesión, que conviene registrar en la prueba con el modelo real.
-- ⚠️ PENDIENTE (Guti): reemplazar la estimación por la medición real (tokens del footer × precio vigente del modelo usado).
+- **Proveedor y modelo usados en la prueba:** OpenAI, modelo `gpt-4.1-mini` (`LLM_PROVIDER=openai`, `LLM_MODEL=gpt-4.1-mini`). Lo elegí porque ya tenía créditos en la API de OpenAI, tiene buen soporte de llamadas a herramientas (incluidas varias en paralelo) y es barato por token. El código también trae un adaptador para Anthropic (Claude); cambiar de proveedor es cambiar dos variables de entorno, sin tocar el ciclo del agente. Para un modelo pequeño como este el diseño es clave: las reglas y los valores los calculan las herramientas, así que el modelo solo orquesta y explica.
+- **Aviso:** la documentación de OpenAI marca `gpt-4.1-mini` como *deprecated* (al 2026-11-05). Funciona hoy, pero si OpenAI lo retira basta con cambiar `LLM_MODEL` por otro modelo de chat disponible en la cuenta.
+- **Costo medido (no estimado).** Precio de `gpt-4.1-mini` según la página del modelo en OpenAI: USD 0,40 por millón de tokens de entrada y USD 1,60 por millón de salida. Tokens reales registrados por el servidor (`out/sessions/`) en mi prueba:
+
+  | Sesión | Turnos | Tokens entrada | Tokens salida | Costo aprox. |
+  |---|---|---|---|---|
+  | `sol-004` con confirmación y creación de la OC + `sol-003` bloqueada | 3 | 57 699 | 1 712 | ≈ USD 0,026 |
+
+  **Costo por caso procesado: ≈ USD 0,013** (dos casos en la sesión). La mayor parte es entrada, porque cada vuelta reenvía el historial y el payload viaja dos veces.
 
 ## 5. Matriz de controles
 
@@ -169,7 +174,8 @@ En los fixtures, sol-005 muestra el patrón: la factura es del 10 de agosto, la 
   - *Dejar que el modelo valide o calcule:* toda regla vive en herramientas deterministas; el modelo orquesta y explica. Por eso las herramientas recalculan desde los fixtures lo que el modelo les devuelve y rechazan valores alterados.
   - *Habilitar `confirmado: true` cuando el modelo "pregunta algo":* se descartó porque una pregunta cualquiera ("¿proceso otro caso?") seguida de "sí" habría autorizado acciones externas; solo la marca formal habilita.
   - *Crear la OC por el valor cotizado cuando difiere:* descartado porque excede lo aprobado; se crea por lo aprobado y se documenta la excepción.
-- ⚠️ PENDIENTE (Guti): agregar en primera persona qué revisaste línea a línea, qué cambiaste tú y qué propuestas de la IA rechazaste. El PRD exige poder explicar cada línea en la defensa.
+- **Lo que hice yo:** corrí la demo y el chat en mi computadora (Windows, Bun) con OpenAI `gpt-4.1-mini`; probé `sol-004` (confirmación por RC5 y creación de la OC 4500000001) y `sol-003` (bloqueo por RC2/RC3 con sugerencia de escalamiento), y revisé `control.csv`, `trazabilidad.json` y la evidencia en PDF. Elegí OpenAI como proveedor porque ya tenía créditos.
+- **Lo que detecté probando (en los retos 01 y 02) y se aplicó también aquí:** si el modelo pide confirmación solo en texto, el servidor bloquea el "confirmo" por seguridad. Para no depender del modelo, `oc_validar` declara la confirmación pendiente (`pendiente_confirmacion`) cuando la OC es apta pero tiene excepciones.
 
 ## 12. Riesgos de llevarlo a producción
 
